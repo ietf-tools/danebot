@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: mailserver
+  name: dane-manager
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "patch", "create"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dane-manager
+  namespace: mailserver
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: mailserver
+roleRef:
+  kind: Role
+  name: dane-manager
+  apiGroup: rbac.authorization.k8s.io
