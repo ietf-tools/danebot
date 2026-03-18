@@ -1,0 +1,31 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "danebot.fullname" . }}
+spec:
+  schedule: "{{ .Values.jobSchedule }}"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccount: {{ include "danebot.fullname" . }}
+          serviceAccountName: {{ include "danebot.fullname" . }}
+          containers:
+          - image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            name: danebot
+            command: ["/bin/sh", "-c"]
+            args:
+              - /app/dane.sh
+            volumeMounts:
+            - mountPath: /etc/letsencrypt
+              name: danebot
+            envFrom:
+            - secretRef:
+                name: {{ include "danebot.fullname" . }}-keys
+          restartPolicy: Never
+          volumes:
+          - name: danebot
+            persistentVolumeClaim:
+              claimName: {{ include "danebot.fullname" . }}
+

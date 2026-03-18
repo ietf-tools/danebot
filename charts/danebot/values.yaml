@@ -1,0 +1,105 @@
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+
+jobSchedule: "0 0 * * 0"
+image:
+  repository: nginx
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account.
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+secret:
+  create: true
+  # existingSecret: my-secret
+  contents: |
+    DANEBOT_DOMAINS: xx
+    DANEBOT_EMAIL_ADDR: xx
+    DANEBOT_TOS_AGREE: xx
+    DANEBOT_PORTS: xx
+    DANEBOT_UPDATE_TYPE: xx
+    DANEBOT_RFC2136_MASTER: xx
+    DANEBOT_TSIG_NAME: xx
+    DANEBOT_TSIG_SECRET: xx
+    DANEBOT_TSIG_ALGO: xx
+    DANEBOT_SERVICE_TYPE: xx
+    DANEBOT_K8S_NS: xx
+    DANEBOT_K8S_DEPLOYMENT_TYPE: xx
+    DANEBOT_K8S_DEPLOYMENT_NAME: xx
+    DANEBOT_K8S_SECRET_NAME: xx
+
+
+persistence:
+  enabled: true
+  ## database data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  # storageClass: "standard-singlewriter"
+  # existingClaim: openldap-pvc
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  storageClass: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  extraLabels: {}
