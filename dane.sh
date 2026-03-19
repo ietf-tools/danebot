@@ -32,7 +32,7 @@ service_type=${DANEBOT_SERVICE_TYPE:-k8s}
 
 # needed for in-cluster actions
 namespace=${DANEBOT_K8S_NS:-mailserver}
-deployment_type=${DANEBOT_K8S_DEPLOYMENT_TYPE:-deployment}
+deployment_type=${DANEBOT_K8S_DEPLOYMENT_TYPE:-deployments}
 deployment_name=${DANEBOT_K8S_DEPLOYMENT_NAME:-mailserver-deployment}
 secret_name=${DANEBOT_K8S_SECRET_NAME:-dane}
 
