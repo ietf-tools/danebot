@@ -32,7 +32,7 @@ service_type=${DANEBOT_SERVICE_TYPE:-k8s}
 
 # needed for in-cluster actions
 namespace=${DANEBOT_K8S_NS:-mailserver}
-deployment_type=${DANEBOT_K8S_DEPLOYMENT_TYPE:-deployments}
+deployment_type=${DANEBOT_K8S_DEPLOYMENT_TYPE:-deployment}
 deployment_name=${DANEBOT_K8S_DEPLOYMENT_NAME:-mailserver-deployment}
 secret_name=${DANEBOT_K8S_SECRET_NAME:-dane}
 
@@ -337,7 +337,7 @@ else
   check_service ${cur_hash}
 
   # renew next before using
-  certbot renew --cert-name ${domains[0]}$next --force-renewal
+  /usr/bin/certbot renew --cert-name ${domains[0]}$next --force-renewal
 
   # get new cert hash for dns
   new_next_hash=$(openssl ec -in /etc/letsencrypt/next/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
