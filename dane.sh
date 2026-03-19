@@ -2,8 +2,8 @@
 
 # domains on the certificate
 domain_list=${DANEBOT_DOMAINS:-"mail.mydomain.com mx.mydomain.com"}
-domains=(${domain_list})
-printf -v domains_joined '%s,' ${domains}
+domains=(${domain_list[@]})
+printf -v domains_joined '%s,' ${domains[@]}
 # email address for Lets letsencrypt
 le_account_email=${DANEBOT_EMAIL_ADDR}
 le_account_tos=${DANEBOT_TOS_AGREE:-no}
