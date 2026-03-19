@@ -360,7 +360,7 @@ else
   if [ ${service_type} == "k8s" ]; then
     # Apply next cert to deployment
     echo "Inserting new cert into secret"
-    insert_k8s_secret next
+    insert_k8s_secret current
 
     echo "Restarting deployment"
     restart_k8s_deployment
