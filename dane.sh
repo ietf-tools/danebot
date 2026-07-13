@@ -62,42 +62,34 @@ rfc2136_remove() {
 
 cloudflare_update() {
   echo "Getting Zone ID for domain"
+  cf_domain=`tldextract ${2} | cut -d' ' -f2- | sed s/\ /./`
+  echo "CF Domain if ${cf_domain}"
 
   zone_id=`curl -X GET "https://api.cloudflare.com/client/v4/zones" \
     --fail --silent --show-error \
     -H "Authorization: Bearer ${cf_token}" \
     -H "Content-Type: application/json" | \
-    jq --arg ZONE "${2}" '.result[] | (select(.name == $ZONE)) | .id' | tr -d '"'`
+    jq --arg ZONE "${cf_domain}" '.result[] | (select(.name == $ZONE)) | .id' | tr -d '"'`
 
-  echo "checking for existing records"
-  existing_record=`curl https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
+
+  echo 'Trying to create TLSA record... 400 response is okay in this case'
+  curl -X POST https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
     --fail --silent --show-error \
-    -H "Authorization: Bearer ${cf_token}" | \
-    jq '.result[] | (select(.type=="TLSA" and .content=="3 1 1 '"${3}"'")) | .id' | tr -d '"'`
+    -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer ${cf_token}" \
+    -d '{
+    "content": "3 1 1 '"${3}"'",
+    "data": {
+    "certificate": "'"${3}"'",
+      "matching_type": 1,
+      "selector": 1,
+      "usage": 3
+    },
+    "name": "'"_${1}._tcp.${2}."'",
+    "type": "TLSA"
+  }'
 
-  if [ -z ${existing_record+x} ]; then
-    echo 'no record found creating TLSA record...'
-    curl -X POST https://api.cloudflare.com/client/v4/zones/${zone_id}/dns_records \
-      --fail --silent --show-error \
-      -H 'Content-Type: application/json' \
-      -H "Authorization: Bearer ${cf_token}" \
-      -d '{
-      "content": "3 1 1 '"${3}"'",
-      "data": {
-      "certificate": "'"${3}"'",
-        "matching_type": 1,
-        "selector": 1,
-        "usage": 3
-      },
-      "name": "'"_${1}._tcp.${2}."'",
-      "type": "TLSA"
-    }'
-
-    echo "Done."
-  else
-    echo "existing record found with id ${existing_record}, nothing needed"
-    echo "Done."
-  fi
+  echo "Done."
 }
 
 restart_k8s_deployment() {
@@ -224,10 +216,21 @@ if [ ${update_type} == "rfc2136" ]; then
     echo "RFC2136 updates need both DANEBOT_TSIG_NAME, and DANEBOT_TSIG_SECRET set"
     exit 1
   fi
+  if [ ! -f "/etc/letsencrypt/dns.ini" ]; then
+    echo "dns_rfc2136_server = ${master}" >/etc/letsencrypt/dns.ini
+    echo "dns_rfc2136_name = ${tsig_name}" >>/etc/letsencrypt/dns.ini
+    echo "dns_rfc2136_secret = ${tsig_secret}" >>/etc/letsencrypt/dns.ini
+    echo "dns_rfc2136_algorithm = ${tsig_algo^^}" >>/etc/letsencrypt/dns.ini
+    echo "dns_rfc2136_port = 53" >>/etc/letsencrypt/dns.ini
+    echo "dns_rfc2136_sign_query = false" >>/etc/letsencrypt/dns.ini
+  fi
 elif [ ${update_type} == "cloudflare" ]; then
-  if [ -z ${DANEBOT_CFTOKEN+x} ]; then
+  if [ -z ${cf_token+x} ]; then
     echo "Cloudflare updates need DANEBOT_CFTOKEN set"
     exit 1
+  fi
+  if [ ! -f "/etc/letsencrypt/cf.ini" ]; then
+    echo "dns_cloudflare_api_token = ${cf_token}" >>/etc/letsencrypt/cf.ini
   fi
 fi
 
@@ -243,20 +246,15 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}" ]; then
   fi
   initial_setup="1"
   if [ ${update_type} == "rfc2136" ]; then
-    echo "dns_rfc2136_server = ${master}" >/etc/letsencrypt/dns.ini
-    echo "dns_rfc2136_name = ${tsig_name}" >>/etc/letsencrypt/dns.ini
-    echo "dns_rfc2136_secret = ${tsig_secret}" >>/etc/letsencrypt/dns.ini
-    echo "dns_rfc2136_algorithm = ${tsig_algo^^}" >>/etc/letsencrypt/dns.ini
-    echo "dns_rfc2136_port = 53" >>/etc/letsencrypt/dns.ini
-    echo "dns_rfc2136_sign_query = false" >>/etc/letsencrypt/dns.ini
-  echo "Requesting initial certs"
-  /usr/bin/certbot certonly --reuse-key \
-    --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
-    --dns-rfc2136 -d ${domains_joined%,} \
-    -n -m ${le_account_email} --agree-tos \
-    --no-autorenew
+    echo "Requesting initial certs"
+    certbot certonly --reuse-key \
+      --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
+      --dns-rfc2136 -d ${domains_joined%,} \
+      -n -m ${le_account_email} --agree-tos \
+      --no-autorenew
   elif [ ${update_type} == "cloudflare" ]; then
-  /usr/bin/certbot certonly --reuse-key \
+    certbot certonly --reuse-key \
+    --dns-cloudflare-credentials /etc/letsencrypt/cf.ini \
     --dns-cloudflare -d ${domains_joined%,} \
     -n -m ${le_account_email} --agree-tos \
     --no-autorenew
@@ -269,7 +267,7 @@ fi
 if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
   echo "Duplicating initial certs"
   if [ ${update_type} == "rfc2136" ]; then
-    /usr/bin/certbot certonly --reuse-key \
+    certbot certonly --reuse-key \
       --dns-rfc2136-credentials=/etc/letsencrypt/dns.ini \
       --dns-rfc2136 --duplicate \
       --cert-name "${domains[0]}-duplicate" \
@@ -277,7 +275,8 @@ if [ ! -d "/etc/letsencrypt/live/${domains[0]}-duplicate" ]; then
       -n -m ${le_account_email} --agree-tos \
       --no-autorenew
   elif [ ${update_type} == "cloudflare" ]; then
-    /usr/bin/certbot certonly --reuse-key \
+    certbot certonly --reuse-key \
+      --dns-cloudflare-credentials /etc/letsencrypt/cf.ini \
       --dns-cloudflare --duplicate \
       --cert-name "${domains[0]}-duplicate" \
       -d ${domains_joined%,} \
@@ -297,6 +296,8 @@ if [[ ${initial_setup} == "1" ]]; then
   echo "Starting DANE setup for ${domains[@]}"
 
   echo "Adding hashes to DNS"
+  echo "Current hash is ${cur_hash}"
+  echo "Next hash is ${next_hash}"
   update_dns ${cur_hash}
   update_dns ${next_hash}
   echo "Waiting dns_prop_delay of ${dns_prop_delay} before checking DNS"
@@ -314,8 +315,6 @@ if [[ ${initial_setup} == "1" ]]; then
   echo "Checking service for new certificates before continuing"
   check_service ${cur_hash}
   echo "New certificate found with hash ${1}"
-  echo "Cleaning up LE dns.ini"
-  rm /etc/letsencrypt/dns.ini
   echo "Initial setup done"
   exit 0
 else
@@ -337,7 +336,7 @@ else
   check_service ${cur_hash}
 
   # renew next before using
-  /usr/bin/certbot renew --cert-name ${domains[0]}$next --force-renewal
+  certbot renew --cert-name ${domains[0]}$next --force-renewal
 
   # get new cert hash for dns
   new_next_hash=$(openssl ec -in /etc/letsencrypt/next/${domains[0]}/privkey.pem -pubout -outform DER 2>/dev/null | sha256sum | awk '{print $1}')
