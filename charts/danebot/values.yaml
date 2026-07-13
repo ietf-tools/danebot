@@ -1,12 +1,12 @@
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-
-jobSchedule: "0 0 * * 0"
 image:
-  repository: nginx
+  repository: ghcr.io/ietf-tools/danebot
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
+
+jobSchedule: "0 0 * * 0"
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
