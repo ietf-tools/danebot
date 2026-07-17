@@ -22,7 +22,11 @@ spec:
               name: danebot
             envFrom:
             - secretRef:
+                {{- if .Values.secret.existingSecret -}}
+                name: {{ .Values.secret.existingSecret }}
+                {{- else }}
                 name: {{ include "danebot.fullname" . }}-keys
+                {{- end }}
           restartPolicy: Never
           volumes:
           - name: danebot
