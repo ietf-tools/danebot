@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   danebot:
   - apiVersion: v2
+    appVersion: 0.2.4
+    created: "2026-07-17T07:55:59.652543396Z"
+    description: A Helm chart for Kubernetes
+    digest: 1a3d509e95b5fbdaa684aef68f65b8fc2e7fc52af4b0a131416be765bb2e7df5
+    name: danebot
+    type: application
+    urls:
+    - https://github.com/ietf-tools/danebot/releases/download/danebot-0.2.4/danebot-0.2.4.tgz
+    version: 0.2.4
+  - apiVersion: v2
     appVersion: 0.2.3
     created: "2026-07-17T04:53:12.413397043Z"
     description: A Helm chart for Kubernetes
@@ -71,4 +81,4 @@ entries:
     urls:
     - https://github.com/ietf-tools/danebot/releases/download/danebot-0.1.0/danebot-0.1.0.tgz
     version: 0.1.0
-generated: "2026-07-17T04:53:12.413425526Z"
+generated: "2026-07-17T07:55:59.652576488Z"
