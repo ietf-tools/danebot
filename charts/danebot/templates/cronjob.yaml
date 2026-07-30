@@ -28,6 +28,13 @@ spec:
                 name: {{ include "danebot.fullname" . }}-keys
                 {{- end }}
           restartPolicy: Never
+          {{- with .Values.dnsPolicy }}
+          dnsPolicy: {{ . }}
+          {{- end }}
+          {{- with .Values.dnsConfig }}
+          dnsConfig:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumes:
           - name: danebot
             persistentVolumeClaim:
